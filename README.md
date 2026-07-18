@@ -33,20 +33,37 @@ flowchart LR
 | `agent/` | Python LiveKit agent — the director: brainstorm, cast, render, edit, export |
 | `SPEC.md` | The build spec / single source of truth |
 
-## Run it
+## Run it locally
+
+Everything runs on localhost — no database, no cloud. LiveKit runs in dev mode,
+so it needs **no account**; you only bring keys for Anthropic, Deepgram,
+ElevenLabs, and fal.
 
 ```bash
-# 1. agent
-cd agent && uv sync && cp .env.example .env.local  # fill keys
-uv run python src/agent.py dev
+# prerequisites: ffmpeg, uv, node/pnpm, and livekit-server (brew install livekit)
 
-# 2. frontend
-cd frontend && pnpm install && cp .env.example .env.local  # fill keys
-pnpm dev
+# 1. keys
+cp agent/.env.example    agent/.env.local     # add ANTHROPIC / DEEPGRAM / ELEVENLABS / FAL keys
+cp frontend/.env.example frontend/.env.local  # LiveKit dev values are prefilled
+
+# 2. install
+cd agent && uv sync && cd ..
+cd frontend && pnpm install && cd ..
+
+# 3. run all three (livekit-server + agent + web) with one command
+./dev.sh
 ```
 
-Open http://localhost:3000, enter the studio, and start talking.
-No keys yet? Set `MOCK_MEDIA=1` and everything runs with placeholder media.
+Open http://localhost:3000 and press the talk orb. Without keys, `/studio`
+shows a setup screen (not a fake studio) telling you exactly what's missing.
+
+**Test the edit engine with zero keys** — drive the real ffmpeg pipeline and
+render an actual mp4:
+
+```bash
+cd agent && uv run python -m src.repl --script demo   # -> agent/test-output/repl-demo.mp4
+uv run pytest -q                                       # 23 engine tests, real renders
+```
 
 ---
 *Created entirely during the hackathon window, July 17–19, 2026.*
