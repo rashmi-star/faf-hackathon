@@ -32,3 +32,6 @@ KMS
 # GitHub CLI
 .github/personal-instructions.md
 project_state.json
+
+# edit-engine render artifacts
+test-output/
