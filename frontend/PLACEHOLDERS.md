@@ -33,3 +33,4 @@ all imagery it references must be fal-generated.
 
 ## External reference (STRICT: dev-only, third-party IP)
 - `public/placeholders/reference-character-video.mp4` — downloaded from x.com/yokohara_h (character action reference provided by team). NOT ours. MUST be replaced with a fal-generated equivalent before submission — hackathon rules prohibit third-party assets. Tracked here so it cannot ship by accident.
+- `public/placeholders/reference-character-poster.jpg` — poster/fallback frame extracted (ffmpeg) from `reference-character-video.mp4`. DERIVED from the third-party clip above, so it carries the same restriction: MUST be replaced with a frame of the fal-generated equivalent before submission. Used as the poster on the landing character-consistency showcase card (`components/landing/character-consistency.tsx`).

@@ -1,5 +1,6 @@
 'use client';
 
+import { CharacterConsistency } from '@/components/landing/character-consistency';
 import { Footer } from '@/components/landing/footer';
 import { Hero } from '@/components/landing/hero';
 import { HowItWorks } from '@/components/landing/how-it-works';
@@ -18,6 +19,7 @@ export function LandingPage() {
         <div aria-hidden className="ld-grain pointer-events-none fixed inset-0 z-[60]" />
         <Hero />
         <HowItWorks />
+        <CharacterConsistency />
         <StackStrip />
         <Footer />
       </main>
