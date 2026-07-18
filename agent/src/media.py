@@ -18,9 +18,13 @@ from __future__ import annotations
 
 import abc
 import asyncio
+import hashlib
 import itertools
 import logging
 import os
+import subprocess
+from pathlib import Path
+from urllib.parse import urlparse
 
 import httpx
 
@@ -35,6 +39,7 @@ FAL_STILL_MODEL = "fal-ai/flux/schnell"  # or "fal-ai/flux-2" for quality
 FAL_VIDEO_MODEL = "fal-ai/kling-video/v2.1/standard/image-to-video"
 FAL_LIPSYNC_MODEL = "fal-ai/sync-lipsync/v2"  # Sync Labs 2.0
 FAL_COMPOSE_MODEL = "fal-ai/ffmpeg-api/compose"
+FAL_MUSIC_MODEL = "fal-ai/stable-audio"  # text-to-audio music bed
 
 ELEVENLABS_TTS_URL = "https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
 ELEVENLABS_TTS_MODEL = "eleven_flash_v2_5"
@@ -69,10 +74,49 @@ class Media(abc.ABC):
     async def lipsync(self, video_url: str, audio_url: str) -> str: ...
 
     @abc.abstractmethod
+    async def music(self, prompt: str, duration: float) -> str: ...
+
+    @abc.abstractmethod
     async def assemble(self, clips: list[tuple[str, float]]) -> str: ...
 
     @abc.abstractmethod
     async def export(self, timeline_url: str, fmt: str) -> str: ...
+
+
+# ---------------------------------------------------------------------------
+# URL -> local path resolution (for the local ffmpeg edit engine)
+
+MEDIA_CACHE_DIR = Path(__file__).resolve().parent.parent / "media-cache"
+_PUBLIC_DIR = Path(__file__).resolve().parents[2] / "frontend" / "public"
+
+
+async def resolve_local(url: str) -> str:
+    """Local filesystem path for a media URL, so the ffmpeg engine can read it.
+
+    Three cases: an existing local path passes through untouched; a mock
+    placeholder URL maps onto ``frontend/public``; anything else (fal CDN)
+    is downloaded once into ``agent/media-cache`` keyed by URL hash.
+    """
+    if not url:
+        raise ValueError("Cannot resolve an empty media url.")
+    parsed = urlparse(url)
+    if parsed.scheme in ("", "file"):
+        return parsed.path or url
+    base = os.getenv("MOCK_ASSET_BASE_URL", "http://localhost:3000")
+    if url.startswith(f"{base}/"):
+        candidate = _PUBLIC_DIR / url[len(base) + 1 :]
+        if candidate.exists():
+            return str(candidate)
+    suffix = Path(parsed.path).suffix or ".bin"
+    target = MEDIA_CACHE_DIR / (hashlib.sha256(url.encode()).hexdigest()[:16] + suffix)
+    if not target.exists():
+        MEDIA_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        async with httpx.AsyncClient(timeout=120, follow_redirects=True) as client:
+            resp = await client.get(url)
+            resp.raise_for_status()
+        target.write_bytes(resp.content)
+        logger.info("cached %s -> %s", url, target.name)
+    return str(target)
 
 
 # ---------------------------------------------------------------------------
@@ -121,6 +165,35 @@ class MockMedia(Media):
         await asyncio.sleep(1.5)
         return self._video
 
+    async def music(self, prompt: str, duration: float) -> str:
+        """Synthesize a quiet placeholder tone bed with ffmpeg (cached, keyless)."""
+        from engine.render import ffmpeg_bin  # local import: engine is optional here
+
+        path = MEDIA_CACHE_DIR / "mock-music.wav"
+        if not path.exists():
+            MEDIA_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+            seconds = max(8.0, min(duration, 30.0))
+            await asyncio.to_thread(
+                _run_checked,
+                [
+                    ffmpeg_bin(),
+                    "-y",
+                    "-hide_banner",
+                    "-loglevel",
+                    "error",
+                    "-f",
+                    "lavfi",
+                    "-i",
+                    f"sine=frequency=220:sample_rate=48000:duration={seconds:g}",
+                    "-af",
+                    "volume=0.4,tremolo=f=0.5:d=0.6",
+                    "-c:a",
+                    "pcm_s16le",
+                    str(path),
+                ],
+            )
+        return str(path)
+
     async def assemble(self, clips: list[tuple[str, float]]) -> str:
         await asyncio.sleep(1.0)
         return self._video
@@ -128,6 +201,16 @@ class MockMedia(Media):
     async def export(self, timeline_url: str, fmt: str) -> str:
         await asyncio.sleep(0.8)
         return self._video
+
+
+def _run_checked(command: list[str]) -> None:
+    """Run a subprocess and raise with the stderr tail on failure."""
+    result = subprocess.run(command, capture_output=True, text=True)
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"{command[0]} failed (exit {result.returncode}): "
+            f"{result.stderr.strip()[-400:]}"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -222,6 +305,20 @@ class FalMedia(Media):
             },
         )
         return self._video_url(result)
+
+    async def music(self, prompt: str, duration: float) -> str:
+        # UNTESTED: confirm arguments on fal.ai/models/fal-ai/stable-audio
+        result = await self._fal.subscribe_async(
+            FAL_MUSIC_MODEL,
+            arguments={
+                "prompt": prompt,
+                "seconds_total": int(max(8.0, min(duration, 47.0))),
+            },
+        )
+        audio = result.get("audio_file") or result.get("audio") or {}
+        if isinstance(audio, dict) and audio.get("url"):
+            return audio["url"]
+        raise RuntimeError(f"fal result had no audio url: {list(result.keys())}")
 
     async def assemble(self, clips: list[tuple[str, float]]) -> str:
         # UNTESTED: compose track/keyframe schema — confirm on
