@@ -158,6 +158,22 @@ DEEPGRAM_API_KEY=           # or use ElevenLabs Scribe STT
 MOCK_MEDIA=1                # dev default until keys arrive
 ```
 
+## 9.5 NO FAKE PRODUCT (hard rule, added Jul 18)
+
+The shipped experience is REAL ONLY. Anyone cloning the repo runs the actual
+product or is told plainly what's missing — never a simulation.
+
+- `/studio` has exactly one mode: a real LiveKit session driving the real agent.
+  If required env is missing, render an honest **setup screen** (which vars are
+  missing, copy-paste .env.local blocks, run commands) — NOT a mock studio.
+- The scripted golden-path content and any keyword/mock "brain" live ONLY in
+  test harnesses (`scripts/state_demo.py`, agent REPL, pytest) — never reachable
+  from the website UI. No "demo mode" buttons in the product.
+- `MOCK_MEDIA` in the agent is a dev/test switch, OFF by default, documented as
+  dev-only. Default behavior with keys present = real fal/ElevenLabs calls.
+- The typed-direction input stays — but it feeds the REAL agent session (text
+  chat to the same brain), not a mock.
+
 ## 10. Character Reference Sheets (first-class feature)
 
 When the director casts a character it produces a CHARACTER SHEET, not a lone
