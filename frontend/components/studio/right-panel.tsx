@@ -201,20 +201,17 @@ function EmptyState({ icon, label }: { icon: React.ReactNode; label: string }) {
 }
 
 export function RightPanel({ className }: { className?: string }) {
-  const { state, mode } = useProjectState();
+  const { state } = useProjectState();
   const session = useSessionContext();
   const { messages } = useSessionMessages(session);
   const [tab, setTab] = useState<TabId>('transcript');
 
-  // Live mode reads the session transcription stream; mock mode reads project state.
-  const entries: TranscriptEntry[] =
-    mode === 'live'
-      ? messages.map((m) => ({
-          role: m.from?.isLocal ? 'user' : 'agent',
-          text: m.message,
-          ts: m.timestamp,
-        }))
-      : state.transcript;
+  // The transcript is the live session transcription stream.
+  const entries: TranscriptEntry[] = messages.map((m) => ({
+    role: m.from?.isLocal ? 'user' : 'agent',
+    text: m.message,
+    ts: m.timestamp,
+  }));
 
   // Auto-surface new content as the agent produces it (demo magic).
   const charCount = state.characters.length;

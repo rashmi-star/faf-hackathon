@@ -54,6 +54,15 @@ class Character:
     sheet: str  # appearance + personality prompt, reused for consistency
     image_url: str = ""
     approved: bool = False
+    # Reference-sheet fields (SPEC section 10). Populated by FalMedia when keys
+    # are present; empty otherwise so the Cast tab degrades to a portrait card.
+    role: str = ""
+    age: str = ""
+    personality: list[str] = field(default_factory=list)
+    palette: list[str] = field(default_factory=list)  # hex swatches
+    turnaround_urls: list[str] = field(default_factory=list)  # front/3-4/side/back
+    expression_urls: list[str] = field(default_factory=list)  # emotion grid
+    notes: list[str] = field(default_factory=list)
 
 
 @dataclass

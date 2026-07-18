@@ -37,7 +37,7 @@ function PhaseStepper({ phase }: { phase: Phase }) {
 }
 
 function StudioHeader() {
-  const { state, mode } = useProjectState();
+  const { state } = useProjectState();
 
   return (
     <header className="flex h-11 shrink-0 items-center gap-3 border-b border-white/10 bg-zinc-950 px-3 md:px-4">
@@ -51,21 +51,9 @@ function StudioHeader() {
       </span>
       <div className="ml-auto flex items-center gap-4">
         <PhaseStepper phase={state.phase} />
-        <span
-          className={cn(
-            'flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[10px] font-bold tracking-widest uppercase',
-            mode === 'live'
-              ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
-              : 'border-amber-500/40 bg-amber-500/10 text-amber-300'
-          )}
-        >
-          <span
-            className={cn(
-              'size-1.5 animate-pulse rounded-full',
-              mode === 'live' ? 'bg-emerald-400' : 'bg-amber-400'
-            )}
-          />
-          {mode === 'live' ? 'Live' : 'Mock'}
+        <span className="flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-bold tracking-widest text-emerald-300 uppercase">
+          <span className="size-1.5 animate-pulse rounded-full bg-emerald-400" />
+          Live
         </span>
       </div>
     </header>

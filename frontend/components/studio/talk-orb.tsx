@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { Track } from 'livekit-client';
 import { AnimatePresence, motion } from 'motion/react';
 import {
@@ -12,7 +11,6 @@ import {
   useTrackToggle,
 } from '@livekit/components-react';
 import { MicrophoneSlashIcon } from '@phosphor-icons/react/dist/ssr';
-import { useProjectState } from '@/lib/project-state';
 import { cn } from '@/lib/shadcn/utils';
 
 const BAR_COUNT = 7;
@@ -28,35 +26,6 @@ const STATE_LABELS: Partial<Record<AgentState, string>> = {
   speaking: 'Speaking',
   failed: 'Agent unavailable',
 };
-
-/** Fake audio levels for mock mode — a sine/noise blend that looks like speech. */
-function useMockBands(active: boolean): number[] {
-  const [bands, setBands] = useState<number[]>(() => new Array(BAR_COUNT).fill(0));
-
-  useEffect(() => {
-    if (!active) {
-      setBands(new Array(BAR_COUNT).fill(0));
-      return;
-    }
-    let raf: number;
-    const start = performance.now();
-    const tick = (now: number) => {
-      const e = (now - start) / 1000;
-      setBands(
-        Array.from({ length: BAR_COUNT }, (_, i) => {
-          const wave = Math.abs(Math.sin(e * (2.6 + i * 0.9) + i * 1.3));
-          const envelope = 0.35 + 0.65 * Math.abs(Math.sin(e * 1.8 + 0.5));
-          return wave * envelope;
-        })
-      );
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [active]);
-
-  return bands;
-}
 
 function OrbBars({ bands, active }: { bands: number[]; active: boolean }) {
   return (
@@ -76,35 +45,24 @@ function OrbBars({ bands, active }: { bands: number[]; active: boolean }) {
 }
 
 export function TalkOrb() {
-  const { state, mode, mockAgentState } = useProjectState();
   const session = useSessionContext();
   const agent = useAgent();
   const { messages } = useSessionMessages(session);
   const micToggle = useTrackToggle({ source: Track.Source.Microphone });
-  const [mockMicEnabled, setMockMicEnabled] = useState(true);
 
-  const agentState: AgentState = mode === 'live' ? agent.state : mockAgentState;
+  const agentState: AgentState = agent.state;
   const isSpeaking = agentState === 'speaking';
-  const micEnabled = mode === 'live' ? micToggle.enabled : mockMicEnabled;
+  const micEnabled = micToggle.enabled;
 
   // Visualize agent speech when speaking, otherwise the user's mic level.
-  const liveBands = useMultibandTrackVolume(
+  const bands = useMultibandTrackVolume(
     isSpeaking ? agent.microphoneTrack : session.local.microphoneTrack,
     { bands: BAR_COUNT, loPass: 100, hiPass: 200 }
   );
-  const mockBands = useMockBands(mode === 'mock' && isSpeaking);
-  const bands = mode === 'live' ? liveBands : mockBands;
 
-  const caption =
-    mode === 'live'
-      ? [...messages].reverse().find((m) => !m.from?.isLocal)?.message
-      : [...state.transcript].reverse().find((t) => t.role === 'agent')?.text;
+  const caption = [...messages].reverse().find((m) => !m.from?.isLocal)?.message;
 
   const handleClick = async () => {
-    if (mode === 'mock') {
-      setMockMicEnabled((v) => !v);
-      return;
-    }
     if (!session.isConnected) {
       await session.start({
         tracks: {
