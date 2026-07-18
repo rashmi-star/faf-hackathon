@@ -122,3 +122,89 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Landing page (/, components/landing) — scoped additions.           */
+/* Everything above is the studio-agnostic base; do not restyle it.   */
+/* ------------------------------------------------------------------ */
+
+.landing {
+  --ld-bg: #0a0a0c;
+  --ld-surface: #141417;
+  --ld-accent: #e8b34b;
+  background-color: var(--ld-bg);
+  color: #f5f3ee;
+}
+
+/* 35mm-style film grain overlay */
+.ld-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+  opacity: 0.22;
+}
+
+/* Sprocket-hole rails on the film-frame cards */
+.ld-rail {
+  background-color: var(--ld-surface);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 8px,
+    var(--ld-bg) 8px,
+    var(--ld-bg) 18px,
+    transparent 18px,
+    transparent 26px
+  );
+}
+
+/* Blinking REC dot in the hero eyebrow */
+@keyframes ld-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+.ld-rec-dot {
+  animation: ld-blink 1.6s ease-in-out infinite;
+}
+
+/* Hero scroll cue: a line that draws down, then retracts */
+@keyframes ld-scroll {
+  0% {
+    transform: scaleY(0);
+    transform-origin: top;
+  }
+  45% {
+    transform: scaleY(1);
+    transform-origin: top;
+  }
+  55% {
+    transform: scaleY(1);
+    transform-origin: bottom;
+  }
+  100% {
+    transform: scaleY(0);
+    transform-origin: bottom;
+  }
+}
+.ld-scroll-line {
+  animation: ld-scroll 2.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+/* Lenis smooth scroll (components/landing/smooth-scroll.tsx) */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}

@@ -1,10 +1,12 @@
-import { headers } from 'next/headers';
-import { App } from '@/components/app/app';
-import { getAppConfig } from '@/lib/utils';
+import { LandingPage } from '@/components/landing/landing-page';
 
-export default async function Page() {
-  const hdrs = await headers();
-  const appConfig = await getAppConfig(hdrs);
-
-  return <App appConfig={appConfig} />;
+/*
+ * STUDIO-BUILDER MARKER: this route is now the cinematic landing page.
+ * The LiveKit session UI that used to render here (`<App appConfig={...} />`
+ * from '@/components/app/app', configured via `getAppConfig(await headers())`)
+ * was NOT moved or modified — mount it at app/studio/page.tsx. The landing
+ * CTAs link to /studio.
+ */
+export default function Page() {
+  return <LandingPage />;
 }

@@ -47,22 +47,22 @@ export default async function RootLayout({ children }: RootLayoutProps) {
   const hdrs = await headers();
   const appConfig = await getAppConfig(hdrs);
   const styles = getStyles(appConfig);
-  const { pageTitle, pageDescription, companyName, logo, logoDark } = appConfig;
 
   return (
+    // NOTE: no `scroll-smooth` here — the landing page runs Lenis, which
+    // fights CSS smooth scrolling (see components/landing/smooth-scroll.tsx).
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn(
-        publicSans.variable,
-        commitMono.variable,
-        'scroll-smooth font-sans antialiased'
-      )}
+      className={cn(publicSans.variable, commitMono.variable, 'font-sans antialiased')}
     >
       <head>
         {styles && <style>{styles}</style>}
-        <title>{pageTitle}</title>
-        <meta name="description" content={pageDescription} />
+        <title>Director FAL — The editor you talk to.</title>
+        <meta
+          name="description"
+          content="Voice-directed AI video creation. Brainstorm a story, cast characters, and direct every edit out loud — built on fal, ElevenLabs, and LiveKit."
+        />
       </head>
       <body className="overflow-x-hidden">
         <ThemeProvider
@@ -71,35 +71,9 @@ export default async function RootLayout({ children }: RootLayoutProps) {
           enableSystem
           disableTransitionOnChange
         >
-          <header className="fixed top-0 left-0 z-50 hidden w-full flex-row justify-between p-6 md:flex">
-            <a
-              target="_blank"
-              rel="noopener noreferrer"
-              href="https://livekit.io"
-              className="scale-100 transition-transform duration-300 hover:scale-110"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={logo} alt={`${companyName} Logo`} className="block size-6 dark:hidden" />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={logoDark ?? logo}
-                alt={`${companyName} Logo`}
-                className="hidden size-6 dark:block"
-              />
-            </a>
-            <span className="text-foreground font-mono text-xs font-bold tracking-wider uppercase">
-              Built with{' '}
-              <a
-                target="_blank"
-                rel="noopener noreferrer"
-                href="https://docs.livekit.io/agents"
-                className="underline underline-offset-4"
-              >
-                LiveKit Agents
-              </a>
-            </span>
-          </header>
-
+          {/* The starter's fixed LiveKit header was removed: the landing page
+              carries its own nav, and the studio should look like an editor.
+              Studio builder: add any studio chrome inside app/studio/. */}
           {children}
           <div className="group fixed bottom-0 left-1/2 z-50 mb-2 -translate-x-1/2">
             <ThemeToggle className="translate-y-20 transition-transform delay-150 duration-300 group-hover:translate-y-0" />
