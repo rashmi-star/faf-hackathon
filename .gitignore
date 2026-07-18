@@ -1,0 +1,24 @@
+# deps
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+
+# builds
+.next/
+out/
+dist/
+
+# env & secrets
+.env
+.env.local
+.env*.local
+
+# state / scratch
+project_state.json
+.DS_Store
+*.log
+
+# editor
+.idea/
+.vscode/
