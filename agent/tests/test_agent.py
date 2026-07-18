@@ -3,7 +3,7 @@ import textwrap
 import pytest
 from livekit.agents import AgentSession, inference, llm
 
-from agent import Assistant
+from agent import DirectorAgent as Assistant
 
 
 def _judge_llm() -> llm.LLM:
