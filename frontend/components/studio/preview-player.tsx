@@ -83,7 +83,7 @@ export function PreviewPlayer({
     const video = videoRef.current;
     if (!video || !shot) return;
     const t = video.currentTime;
-    // The mock clip is longer than the shot — clamp to the shot's slot on the timeline.
+    // A source clip may run longer than its shot — clamp to the shot's slot on the timeline.
     if (t >= shotDuration) {
       video.pause();
       setLocalTime(shotDuration);

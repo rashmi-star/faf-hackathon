@@ -4,12 +4,11 @@ import { useEffect, useRef, useState } from 'react';
 import { useSessionContext, useSessionMessages } from '@livekit/components-react';
 import {
   ChatTextIcon,
-  CheckCircleIcon,
-  CircleNotchIcon,
   DownloadSimpleIcon,
   ExportIcon,
   UsersIcon,
 } from '@phosphor-icons/react/dist/ssr';
+import { CharacterSheet } from '@/components/studio/character-sheet';
 import { type ExportItem, type TranscriptEntry, useProjectState } from '@/lib/project-state';
 import { cn } from '@/lib/shadcn/utils';
 
@@ -76,46 +75,32 @@ function TranscriptTab({ entries }: { entries: TranscriptEntry[] }) {
 
 function CastTab() {
   const { state } = useProjectState();
+  const characters = state.characters;
 
-  if (state.characters.length === 0) {
+  // Accordion: one sheet open at a time keeps the narrow panel legible. The
+  // newest character auto-expands as the director casts it (demo magic).
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const lastId = characters[characters.length - 1]?.id ?? null;
+  const prevLastId = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (lastId && lastId !== prevLastId.current) setExpandedId(lastId);
+    prevLastId.current = lastId;
+  }, [lastId]);
+
+  if (characters.length === 0) {
     return <EmptyState icon={<UsersIcon className="size-6" />} label="Characters appear here" />;
   }
 
   return (
-    <div className="grid h-full grid-cols-2 content-start gap-3 overflow-y-auto p-3 [scrollbar-color:rgba(255,255,255,0.2)_transparent] [scrollbar-width:thin]">
-      {state.characters.map((character) => (
-        <div
+    <div className="h-full space-y-2 overflow-y-auto p-3 [scrollbar-color:rgba(255,255,255,0.2)_transparent] [scrollbar-width:thin]">
+      {characters.map((character) => (
+        <CharacterSheet
           key={character.id}
-          className="overflow-hidden rounded-lg border border-white/10 bg-zinc-900"
-        >
-          <div className="relative aspect-[3/4]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={character.image_url}
-              alt={character.name}
-              className="h-full w-full object-cover"
-            />
-            <span
-              className={cn(
-                'absolute right-1.5 bottom-1.5 flex items-center gap-1 rounded-full border px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-widest uppercase backdrop-blur',
-                character.approved
-                  ? 'border-emerald-500/50 bg-emerald-950/70 text-emerald-300'
-                  : 'border-amber-500/50 bg-amber-950/70 text-amber-300'
-              )}
-            >
-              {character.approved ? (
-                <CheckCircleIcon weight="fill" className="size-3" />
-              ) : (
-                <CircleNotchIcon className="size-3 animate-spin" />
-              )}
-              {character.approved ? 'Approved' : 'Pending'}
-            </span>
-          </div>
-          <div className="space-y-0.5 p-2">
-            <p className="text-xs font-semibold text-zinc-100">{character.name}</p>
-            <p className="line-clamp-2 text-[10px] leading-snug text-zinc-500">{character.sheet}</p>
-          </div>
-        </div>
+          character={character}
+          expanded={expandedId === character.id}
+          onToggle={() => setExpandedId((id) => (id === character.id ? null : character.id))}
+        />
       ))}
     </div>
   );

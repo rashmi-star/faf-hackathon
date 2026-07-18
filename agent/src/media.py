@@ -23,6 +23,7 @@ import itertools
 import logging
 import os
 import subprocess
+from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -54,12 +55,108 @@ EXPORT_SPECS: dict[str, tuple[int, int]] = {
 }
 LOOP_DURATION_S = 8.0
 
+# --- character reference sheets (SPEC section 10) --------------------------
+# The four expressions the real backend renders per character, in order. The
+# studio Cast tab labels its expression grid positionally against this list.
+SHEET_EXPRESSIONS = ("neutral", "happy", "sad", "angry")
+
+# Cinematic base palette used to backfill swatches when few colors are named in
+# the sheet text, so every real sheet carries 5 chips.
+_BASE_PALETTE = ["#14141A", "#C9A227", "#8C3B2B", "#3E5C6B", "#E8DCC4"]
+
+# Color words a sheet prompt might mention -> a filmic hex, so the palette is
+# actually derived from the character description rather than fabricated.
+_COLOR_WORDS: dict[str, str] = {
+    "black": "#111114",
+    "white": "#F5F1E6",
+    "ivory": "#F0E9D6",
+    "red": "#B23A2E",
+    "crimson": "#8C2C22",
+    "blue": "#2E4A63",
+    "navy": "#1C2B3A",
+    "green": "#3B5E4A",
+    "emerald": "#2F6E52",
+    "gold": "#C9A227",
+    "amber": "#D8973C",
+    "brown": "#5A3E2B",
+    "grey": "#6B6B6E",
+    "gray": "#6B6B6E",
+    "charcoal": "#2A2A2E",
+    "silver": "#B8BCC0",
+    "purple": "#4E3A5E",
+    "violet": "#5B4A78",
+    "pink": "#C97F86",
+    "orange": "#C86A2E",
+    "teal": "#2C5B5B",
+    "yellow": "#D8C33C",
+    "beige": "#D8C7A8",
+    "tan": "#C2A878",
+}
+
+
+@dataclass
+class CharacterSheetResult:
+    """What :meth:`Media.create_character` returns — the media half of a sheet.
+
+    ``role``/``age``/``personality`` are caller metadata passed straight through
+    (never invented by the media layer). ``expression_urls``/``palette``/
+    ``notes`` are the generated reference material and are only populated by the
+    real backend; the mock leaves them empty so the UI degrades to a portrait
+    card (SPEC section 9.5). ``turnaround_urls`` is reserved and stays empty for
+    now (kept cost-aware — the expression grid is the consistency backbone).
+    """
+
+    image_url: str
+    expression_urls: list[str] = field(default_factory=list)
+    turnaround_urls: list[str] = field(default_factory=list)
+    palette: list[str] = field(default_factory=list)
+    notes: list[str] = field(default_factory=list)
+    role: str = ""
+    age: str = ""
+    personality: list[str] = field(default_factory=list)
+
+
+def derive_palette(*texts: str) -> list[str]:
+    """Five hex swatches: colors named in the sheet first, cinematic base after."""
+    blob = " ".join(texts).lower()
+    found: list[str] = []
+    for word, hex_code in _COLOR_WORDS.items():
+        if word in blob and hex_code not in found:
+            found.append(hex_code)
+    for hex_code in _BASE_PALETTE:
+        if len(found) >= 5:
+            break
+        if hex_code not in found:
+            found.append(hex_code)
+    return found[:5]
+
+
+def sheet_notes(name: str) -> list[str]:
+    """Two short production notes tying downstream renders to the sheet."""
+    return [
+        f"Reuse this sheet as {name}'s reference on every shot so the face and "
+        "wardrobe hold.",
+        "Match key light and eyeline to the hero portrait when re-rendering.",
+    ]
+
 
 class Media(abc.ABC):
     """One interface for all generation. clips are (video_url, duration_s) pairs."""
 
     @abc.abstractmethod
     async def portrait(self, name: str, sheet: str, style: str) -> str: ...
+
+    @abc.abstractmethod
+    async def create_character(
+        self,
+        name: str,
+        sheet: str,
+        style: str,
+        *,
+        role: str = "",
+        age: str = "",
+        personality: list[str] | None = None,
+    ) -> CharacterSheetResult: ...
 
     @abc.abstractmethod
     async def still(self, prompt: str, style: str) -> str: ...
@@ -148,6 +245,27 @@ class MockMedia(Media):
     async def portrait(self, name: str, sheet: str, style: str) -> str:
         await asyncio.sleep(0.8)
         return next(self._portraits)
+
+    async def create_character(
+        self,
+        name: str,
+        sheet: str,
+        style: str,
+        *,
+        role: str = "",
+        age: str = "",
+        personality: list[str] | None = None,
+    ) -> CharacterSheetResult:
+        # No fabricated reference sheet (SPEC section 9.5): only a placeholder
+        # portrait plus the real caller metadata. expression_urls/palette/notes
+        # stay EMPTY so the studio Cast tab degrades to a clean portrait card.
+        url = await self.portrait(name, sheet, style)
+        return CharacterSheetResult(
+            image_url=url,
+            role=role,
+            age=age,
+            personality=list(personality or []),
+        )
 
     async def still(self, prompt: str, style: str) -> str:
         await asyncio.sleep(0.4)
@@ -252,6 +370,67 @@ class FalMedia(Media):
             },
         )
         return result["images"][0]["url"]
+
+    async def _expression(
+        self, name: str, sheet: str, style: str, emotion: str, seed: int
+    ) -> str:
+        """One expression frame, seeded to hold the face across the grid.
+
+        flux/schnell is text-to-image, so consistency comes from reusing the
+        exact appearance sheet plus a fixed per-character seed while only the
+        emotion phrase changes. (A true image-reference chain — flux redux /
+        IP-adapter — is the upgrade path once the video model is locked.)
+        """
+        result = await self._fal.subscribe_async(
+            FAL_STILL_MODEL,
+            arguments={
+                "prompt": (
+                    f"character reference of {name}, {emotion} facial expression. "
+                    f"{sheet}. {style}. head and shoulders, neutral grey studio "
+                    "backdrop, consistent face and wardrobe, film still"
+                ),
+                "image_size": "square_hd",
+                "num_images": 1,
+                "seed": seed,
+            },
+        )
+        return result["images"][0]["url"]
+
+    async def create_character(
+        self,
+        name: str,
+        sheet: str,
+        style: str,
+        *,
+        role: str = "",
+        age: str = "",
+        personality: list[str] | None = None,
+    ) -> CharacterSheetResult:
+        """Full reference sheet: hero portrait + 4-emotion expression grid.
+
+        Cost-aware — one portrait plus four flux/schnell frames per character,
+        rendered concurrently and sharing a seed for face consistency. The
+        palette is derived from the sheet text; notes are pipeline guidance.
+        """
+        portrait_url = await self.portrait(name, sheet, style)
+        seed = int(hashlib.sha256(name.encode()).hexdigest()[:8], 16)
+        expression_urls = list(
+            await asyncio.gather(
+                *(
+                    self._expression(name, sheet, style, emotion, seed)
+                    for emotion in SHEET_EXPRESSIONS
+                )
+            )
+        )
+        return CharacterSheetResult(
+            image_url=portrait_url,
+            expression_urls=expression_urls,
+            palette=derive_palette(sheet, style),
+            notes=sheet_notes(name),
+            role=role,
+            age=age,
+            personality=list(personality or []),
+        )
 
     async def still(self, prompt: str, style: str) -> str:
         result = await self._fal.subscribe_async(

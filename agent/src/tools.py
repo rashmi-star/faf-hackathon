@@ -141,23 +141,59 @@ async def set_story(ctx: RunContext, logline: str, scene: str, style: str) -> st
 
 
 @function_tool
-async def create_character(ctx: RunContext, name: str, sheet: str) -> str:
-    """Generate a character portrait and show it as a card in the studio.
+async def create_character(
+    ctx: RunContext,
+    name: str,
+    sheet: str,
+    role: str = "",
+    age: str = "",
+    personality: list[str] | None = None,
+) -> str:
+    """Generate a character reference sheet and show it in the studio Cast tab.
+
+    Produces a hero portrait plus a 4-emotion expression grid, a color palette,
+    and short production notes — the consistency backbone reused on every later
+    render (SPEC section 10). Whatever identity details you pass populate the
+    sheet's identity block.
 
     Args:
         name: Character name, e.g. "Maya".
         sheet: Full character sheet — appearance, wardrobe, and personality —
             written as an image prompt. This exact sheet is reused in every
             later generation for consistency, so make it vivid and specific.
+        role: Optional story role, e.g. "protagonist" or "her". Empty to omit.
+        age: Optional age or age range, e.g. "late 20s". Empty to omit.
+        personality: Optional short trait words, e.g. ["warm", "guarded",
+            "quick-witted"]. Omit if unknown.
     """
-    await ctx.update(f"Painting a portrait of {name} now.")
-    url = await get_media().portrait(name, sheet, STATE.story.style)
-    char = Character(id=_slug(name), name=name, sheet=sheet, image_url=url)
+    await ctx.update(f"Building the reference sheet for {name} now.")
+    result = await get_media().create_character(
+        name,
+        sheet,
+        STATE.story.style,
+        role=role,
+        age=age,
+        personality=personality or [],
+    )
+    char = Character(
+        id=_slug(name),
+        name=name,
+        sheet=sheet,
+        image_url=result.image_url,
+        role=result.role,
+        age=result.age,
+        personality=result.personality,
+        palette=result.palette,
+        turnaround_urls=result.turnaround_urls,
+        expression_urls=result.expression_urls,
+        notes=result.notes,
+    )
     STATE.characters = [c for c in STATE.characters if c.id != char.id]
     STATE.characters.append(char)
     await publish_state(ctx.session)
     return (
-        f"Portrait of {name} is on screen. Ask the user to approve it before moving on."
+        f"{name}'s reference sheet is on screen. Ask the user to approve it "
+        "before moving on."
     )
 
 
