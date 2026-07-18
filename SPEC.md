@@ -158,7 +158,33 @@ DEEPGRAM_API_KEY=           # or use ElevenLabs Scribe STT
 MOCK_MEDIA=1                # dev default until keys arrive
 ```
 
-## 10. Milestones
+## 10. Character Reference Sheets (first-class feature)
+
+When the director casts a character it produces a CHARACTER SHEET, not a lone
+portrait — modeled on professional animation/film character bibles (user-provided
+references: photoreal investigator sheet, stylized "Nimble Quillwright" sheet):
+
+- **Sheet contents:** identity block (name, role, age, personality, core theme),
+  turnaround (front / 3-4 / side / back), expression grid (6-8 emotions),
+  color palette swatches, 1-2 detail crops (wardrobe/prop), silhouette, notes.
+- **Generation:** fal image model with a consistent seed/reference chain; the sheet
+  IS the consistency backbone — every shot render passes the character's sheet
+  image(s) + sheet text as reference so faces/wardrobe hold across shots.
+  (Sponsor-aligned: fal publicly pushes character sheets as production assets.)
+- **Studio UI:** Cast tab renders sheets like a pro reference document (tabs or
+  expandable card: turnaround strip, expression grid, palette chips, notes),
+  typography clean and editorial — never a bare image dump.
+- **Mock mode:** one pre-built sheet layout per character using placeholder art.
+- **Export:** sheets are downloadable artifacts alongside the film (judges love
+  inspectable intermediates).
+
+**Landing showcase card:** one 3D-tilt card featuring a looping character-action
+video with small reference-sheet thumbnails beside it ("Cast characters that stay
+consistent — the director keeps a bible for every face"). Dev placeholder:
+`/placeholders/reference-character-video.mp4` (third-party, MUST be replaced with
+our own fal-generated clip before submission — see PLACEHOLDERS.md).
+
+## 11. Milestones
 
 - **M1 Scaffold (tonight):** repo, frontend base builds, agent base runs, studio UI
   shell with mock state, landing v1.
