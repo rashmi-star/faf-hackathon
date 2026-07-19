@@ -36,6 +36,8 @@ interface PreviewPlayerProps {
   shot: Shot | null;
   phase: Phase;
   highlightActive: boolean;
+  musicUrl?: string;
+  musicGainDb?: number;
   /** Called with the absolute timeline position (shot.start + video time). */
   onTimeUpdate: (seconds: number) => void;
   onEnded: () => void;
@@ -45,10 +47,13 @@ export function PreviewPlayer({
   shot,
   phase,
   highlightActive,
+  musicUrl,
+  musicGainDb = -8,
   onTimeUpdate,
   onEnded,
 }: PreviewPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const musicRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [localTime, setLocalTime] = useState(0);
 
@@ -60,6 +65,7 @@ export function PreviewPlayer({
     const video = videoRef.current;
     if (!video || !shot?.video_url) return;
     video.load();
+    if (musicRef.current && shot) musicRef.current.currentTime = shot.start;
     setLocalTime(0);
     if (isPlaying) {
       video.play().catch(() => setIsPlaying(false));
@@ -69,11 +75,18 @@ export function PreviewPlayer({
 
   const togglePlay = () => {
     const video = videoRef.current;
+    const music = musicRef.current;
     if (!video || !hasVideo) return;
     if (isPlaying) {
       video.pause();
+      music?.pause();
       setIsPlaying(false);
     } else {
+      if (music && shot) {
+        music.currentTime = shot.start + video.currentTime;
+        music.volume = Math.min(1, Math.pow(10, musicGainDb / 20));
+        music.play().catch(() => undefined);
+      }
       video.play().catch(() => undefined);
       setIsPlaying(true);
     }
@@ -86,6 +99,7 @@ export function PreviewPlayer({
     // A source clip may run longer than its shot — clamp to the shot's slot on the timeline.
     if (t >= shotDuration) {
       video.pause();
+      musicRef.current?.pause();
       setLocalTime(shotDuration);
       onTimeUpdate(shot.end);
       onEnded();
@@ -107,17 +121,20 @@ export function PreviewPlayer({
       className="relative aspect-video max-h-full w-full max-w-4xl overflow-hidden rounded-lg bg-zinc-900"
     >
       {/* media */}
+      {musicUrl && <audio ref={musicRef} src={musicUrl} preload="auto" loop />}
       {hasVideo ? (
         <video
           ref={videoRef}
           src={shot?.video_url ?? undefined}
           poster={shot?.still_url ?? undefined}
           playsInline
-          muted
           preload="auto"
           onTimeUpdate={handleTimeUpdate}
           onEnded={onEnded}
-          onPause={() => setIsPlaying(false)}
+          onPause={() => {
+            musicRef.current?.pause();
+            setIsPlaying(false);
+          }}
           className="h-full w-full object-cover"
         />
       ) : shot?.still_url ? (

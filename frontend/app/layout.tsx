@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { Public_Sans } from 'next/font/google';
 import localFont from 'next/font/local';
 import { headers } from 'next/headers';
@@ -39,6 +40,13 @@ const commitMono = localFont({
   ],
 });
 
+export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
+  title: 'Director FAL — The editor you talk to.',
+  description:
+    'Voice-directed AI video creation. Brainstorm a story, cast characters, and direct every edit out loud — built on fal, ElevenLabs, and LiveKit.',
+};
+
 interface RootLayoutProps {
   children: React.ReactNode;
 }
@@ -56,14 +64,7 @@ export default async function RootLayout({ children }: RootLayoutProps) {
       suppressHydrationWarning
       className={cn(publicSans.variable, commitMono.variable, 'font-sans antialiased')}
     >
-      <head>
-        {styles && <style>{styles}</style>}
-        <title>Director FAL — The editor you talk to.</title>
-        <meta
-          name="description"
-          content="Voice-directed AI video creation. Brainstorm a story, cast characters, and direct every edit out loud — built on fal, ElevenLabs, and LiveKit."
-        />
-      </head>
+      <head>{styles && <style>{styles}</style>}</head>
       <body className="overflow-x-hidden">
         <ThemeProvider
           attribute="class"

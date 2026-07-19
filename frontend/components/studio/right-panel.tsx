@@ -121,6 +121,11 @@ function ExportCard({ item }: { item: ExportItem }) {
   const meta = EXPORT_META[item.format] ?? { name: item.format, dims: '', ratio: 16 / 9 };
   const glyphHeight = 22;
   const glyphWidth = Math.min(36, Math.round(glyphHeight * meta.ratio));
+  // Older agent sessions published a local filesystem path. Keep those
+  // already-rendered cards usable while new sessions publish this route directly.
+  const exportHref = item.url.includes('/agent/exports/')
+    ? `/api/exports/${encodeURIComponent(item.url.split('/').at(-1) ?? '')}`
+    : item.url;
 
   return (
     <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-zinc-900 p-2.5">
@@ -140,7 +145,7 @@ function ExportCard({ item }: { item: ExportItem }) {
         </p>
       </div>
       <a
-        href={item.url}
+        href={exportHref}
         download
         className="flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 font-mono text-[10px] font-bold tracking-widest text-emerald-300 uppercase transition-colors hover:bg-emerald-500/20"
       >

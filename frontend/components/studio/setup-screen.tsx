@@ -10,10 +10,9 @@ const AGENT_ENV = `# agent/.env.local
 LIVEKIT_URL=ws://localhost:7880
 LIVEKIT_API_KEY=devkey
 LIVEKIT_API_SECRET=secret
-ANTHROPIC_API_KEY=...        # console.anthropic.com
 DEEPGRAM_API_KEY=...         # console.deepgram.com (STT)
 ELEVENLABS_API_KEY=...       # elevenlabs.io (voice + music)
-FAL_KEY=...                  # fal.ai (all visuals)`;
+FAL_KEY=...                  # fal.ai (director LLM + all visuals)`;
 
 const WEB_ENV = `# frontend/.env.local
 LIVEKIT_URL=ws://localhost:7880
@@ -65,7 +64,7 @@ export function SetupScreen() {
           LiveKit needs no account in local mode — the <code className="text-zinc-400">devkey</code>
           /<code className="text-zinc-400">secret</code> pair above works with{' '}
           <code className="text-zinc-400">livekit-server --dev</code>. You only sign up for
-          Anthropic, Deepgram, ElevenLabs, and fal.
+          Deepgram, ElevenLabs, and fal.
         </p>
 
         <div className="mt-10 space-y-3">

@@ -48,6 +48,7 @@ class RenderError(EngineError):
 # --- tool + font discovery -------------------------------------------------
 
 _HOMEBREW_BIN = "/opt/homebrew/bin"
+_HOMEBREW_FFMPEG_FULL_BIN = "/opt/homebrew/opt/ffmpeg-full/bin"
 
 
 def _find_tool(name: str, env_var: str) -> str:
@@ -65,6 +66,15 @@ def _find_tool(name: str, env_var: str) -> str:
 
 
 def ffmpeg_bin() -> str:
+    """Resolve an ffmpeg build with the text filters required by the renderer."""
+    override = os.getenv("FFMPEG_BIN")
+    if override:
+        return override
+
+    full = f"{_HOMEBREW_FFMPEG_FULL_BIN}/ffmpeg"
+    if Path(full).exists():
+        return full
+
     return _find_tool("ffmpeg", "FFMPEG_BIN")
 
 

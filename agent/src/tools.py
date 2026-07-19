@@ -61,6 +61,12 @@ EXPORT_DIR = Path(
     os.getenv("DIRECTOR_EXPORT_DIR")
     or Path(__file__).resolve().parent.parent / "exports"
 )
+EXPORT_BASE_URL = os.getenv("DIRECTOR_EXPORT_BASE_URL", "/api/exports").rstrip("/")
+
+
+def _export_url(path: Path) -> str:
+    """Return the browser-facing URL for a locally rendered export."""
+    return f"{EXPORT_BASE_URL}/{path.name}"
 
 
 def _slug(name: str) -> str:
@@ -80,6 +86,9 @@ async def _apply(
     except ValidationError as err:
         return f"That edit did not apply: {err}"
     apply_edit(new_timeline, entry)
+    # Any timeline mutation makes previously rendered files stale. Hiding the
+    # old cards prevents users from downloading a cut that predates the edit.
+    STATE.exports.clear()
     await publish_state(ctx.session)
     return entry.summary
 
@@ -392,7 +401,7 @@ async def export(ctx: RunContext, formats: list[str]) -> str:
                 aspect = "16:9"
             out = EXPORT_DIR / f"export-{fmt.replace(':', 'x')}.mp4"
             await asyncio.to_thread(render, timeline, out, aspect)
-            url = str(out)
+            url = _export_url(out)
         else:  # no engine timeline (e.g. crash recovery): fal compose fallback
             url = await get_media().export(STATE.timeline_url, fmt)
         STATE.exports = [e for e in STATE.exports if e.format != fmt]
@@ -571,7 +580,7 @@ async def add_captions(ctx: RunContext, captions_json: str) -> str:
 
 
 @function_tool
-async def set_music(ctx: RunContext, prompt: str, gain_db: float = -12.0) -> str:
+async def set_music(ctx: RunContext, prompt: str, gain_db: float = -8.0) -> str:
     """Generate a music bed and lay it under the whole film.
 
     The music loops to fill the program and automatically ducks under
@@ -580,8 +589,8 @@ async def set_music(ctx: RunContext, prompt: str, gain_db: float = -12.0) -> str
 
     Args:
         prompt: The music to generate, e.g. "warm ambient strings, hopeful".
-        gain_db: Music level in dB relative to full scale; -12 sits nicely
-            under dialogue.
+        gain_db: Music level in dB relative to full scale; -8 remains clearly
+            audible under dialogue.
     """
     await ctx.update("Scoring the film now.")
     duration = max(STATE.timeline.duration, LOOP_DURATION_S)

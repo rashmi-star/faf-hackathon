@@ -16,9 +16,13 @@ dist/
 
 # state / scratch
 project_state.json
+agent/exports/
+agent/media-cache/
+agent/test-output/
 .DS_Store
 *.log
 
 # editor
 .idea/
 .vscode/
+.agents/

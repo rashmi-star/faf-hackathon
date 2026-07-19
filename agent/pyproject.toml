@@ -9,11 +9,13 @@ description = "Simple voice AI assistant built with LiveKit Agents for Python"
 requires-python = ">=3.10, <3.15"
 
 dependencies = [
-    "livekit-agents[anthropic,deepgram,elevenlabs]>=1.6.1",
+    "livekit-agents[deepgram,elevenlabs]>=1.6.1",
     "livekit-plugins-ai-coustics~=0.2",
     "python-dotenv",
     "fal-client>=0.5",
     "elevenlabs>=1.50",
+    "livekit-plugins-openai>=1.6.6",
+    "openai>=2",
 ]
 
 [dependency-groups]

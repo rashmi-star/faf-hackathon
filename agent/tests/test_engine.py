@@ -269,6 +269,16 @@ def test_ops_never_mutate_input(timeline: Timeline) -> None:
     assert timeline.to_json() == snapshot
 
 
+def test_ffmpeg_supports_text_rendering() -> None:
+    result = subprocess.run(
+        [ffmpeg_bin(), "-hide_banner", "-filters"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert "drawtext" in result.stdout
+
+
 def test_json_roundtrip(timeline: Timeline, tmp_path: Path) -> None:
     tl, _ = ops.add_transition(timeline, "b", duration=0.5)
     tl, _ = ops.add_text(tl, "Title", 0.0, 2.0, position="top")

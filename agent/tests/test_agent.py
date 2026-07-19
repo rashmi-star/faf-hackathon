@@ -6,13 +6,20 @@ from livekit.agents import AgentSession, inference, llm
 
 from agent import DirectorAgent as Assistant
 
+
 # These are LLM-in-the-loop evaluations: they spin up the real inference
-# gateway and a judge model, so they need credentials. On a keyless clone
-# (the default judge experience) they skip cleanly; the deterministic engine
-# suite still runs and proves the product. Provide LIVEKIT_API_KEY to enable.
+# gateway and a judge model, so they need LiveKit Cloud credentials. Local
+# livekit-server dev credentials (devkey/secret) authenticate media transport
+# only and cannot call LiveKit Inference.
+def _has_cloud_credentials() -> bool:
+    url = os.getenv("LIVEKIT_URL", "")
+    key = os.getenv("LIVEKIT_API_KEY", "")
+    return url.startswith("wss://") and bool(key) and key != "devkey"
+
+
 pytestmark = pytest.mark.skipif(
-    not os.getenv("LIVEKIT_API_KEY"),
-    reason="agent behavior evals need LIVEKIT_API_KEY (set keys to run)",
+    not _has_cloud_credentials(),
+    reason="agent behavior evals need LiveKit Cloud credentials",
 )
 
 

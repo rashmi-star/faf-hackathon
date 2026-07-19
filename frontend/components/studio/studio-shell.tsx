@@ -67,6 +67,10 @@ export function StudioShell() {
 
   const shots = state.shots;
   const selectedShot: Shot | null = shots.find((s) => s.id === selectedShotId) ?? shots[0] ?? null;
+  const music = state.timeline?.music;
+  const musicUrl = music?.src.includes('/agent/media-cache/')
+    ? `/api/media/${encodeURIComponent(music.src.split('/').at(-1) ?? '')}`
+    : music?.src;
 
   // Keep the playhead parked at the selected shot's start when nothing is playing yet.
   useEffect(() => {
@@ -102,6 +106,8 @@ export function StudioShell() {
             shot={selectedShot}
             phase={state.phase}
             highlightActive={state.highlight !== null}
+            musicUrl={musicUrl}
+            musicGainDb={music?.gain_db}
             onTimeUpdate={setPlayhead}
             onEnded={handleShotEnded}
           />

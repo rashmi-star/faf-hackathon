@@ -59,8 +59,8 @@ agent/      Python LiveKit agent (base: livekit-examples/agent-starter-python)
 - **Transport:** LiveKit Cloud (free Build tier). Browser joins a room; the Python
   agent joins the same room. Frontend mints tokens via its API route.
 - **Voice pipeline (agent/):** LiveKit AgentSession — STT (Deepgram or ElevenLabs
-  Scribe) → LLM (Anthropic Claude, tool calling) → TTS (ElevenLabs Flash v2.5, user's
-  Pro key). Async function tools so the agent keeps talking during renders.
+  Scribe) → LLM (fal OpenRouter, tool calling) → TTS (ElevenLabs Flash v2.5,
+  user's Pro key). Async function tools keep the agent talking during renders.
 - **Agent → UI sync:** LiveKit RPC / data messages. The agent pushes `state_update`
   events (timeline JSON, highlights, character cards, render status, export links).
   Frontend is a pure renderer of that state. Frontend may also send RPC (e.g. playhead

@@ -19,8 +19,8 @@ flowchart LR
     F --> W
 ```
 
-- **fal** renders everything you see: character portraits, storyboard stills,
-  video shots, lipsync fixes, and the final multi-format export (ffmpeg compose).
+- **fal** powers the director LLM and renders everything you see: character
+  portraits, storyboard stills, video shots, lipsync fixes, and exports.
 - **ElevenLabs** is every voice you hear: the agent's voice, the characters'
   dialogue, and the soundtrack.
 - **LiveKit** is the conversation: you're on a call with your editor.
@@ -36,14 +36,13 @@ flowchart LR
 ## Run it locally
 
 Everything runs on localhost — no database, no cloud. LiveKit runs in dev mode,
-so it needs **no account**; you only bring keys for Anthropic, Deepgram,
-ElevenLabs, and fal.
+so it needs **no account**; you only bring keys for Deepgram, ElevenLabs, and fal.
 
 ```bash
 # prerequisites: ffmpeg, uv, node/pnpm, and livekit-server (brew install livekit)
 
 # 1. keys
-cp agent/.env.example    agent/.env.local     # add ANTHROPIC / DEEPGRAM / ELEVENLABS / FAL keys
+cp agent/.env.example    agent/.env.local     # add DEEPGRAM / ELEVENLABS / FAL keys
 cp frontend/.env.example frontend/.env.local  # LiveKit dev values are prefilled
 
 # 2. install
