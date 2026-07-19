@@ -260,22 +260,22 @@ async def render_all(ctx: RunContext) -> str:
     await publish_state(ctx.session)
     total = len(STATE.shots)
     await ctx.update(f"Rolling cameras on all {total} shots. This takes a moment.")
-    for i, shot in enumerate(STATE.shots, start=1):
-        shot.status = "rendering"
-        await publish_state(ctx.session)
-        async with ctx.with_filler(
-            "Still rendering, the frames are looking great.", delay=8, interval=15
-        ):
+    # One reassurance for the whole job is enough. An interval here causes the
+    # same sentence to flood both voice output and the transcript on slow renders.
+    async with ctx.with_filler("Still rendering, the frames are looking great.", delay=12):
+        for i, shot in enumerate(STATE.shots, start=1):
+            shot.status = "rendering"
+            await publish_state(ctx.session)
             shot.video_url = await media.shot_video(
                 shot.still_url, shot.prompt, shot.end - shot.start
             )
             if shot.dialogue:
                 audio_url = await media.dialogue_audio(shot.dialogue, DIALOGUE_VOICE_ID)
                 shot.video_url = await media.lipsync(shot.video_url, audio_url)
-        shot.status = "ready"
-        await publish_state(ctx.session)
-        if i < total:
-            await ctx.update(f"Shot {i} of {total} is in the can.")
+            shot.status = "ready"
+            await publish_state(ctx.session)
+            if i < total:
+                await ctx.update(f"Shot {i} of {total} is in the can.")
     STATE.timeline_url = await media.assemble(
         [(s.video_url, s.end - s.start) for s in STATE.shots]
     )

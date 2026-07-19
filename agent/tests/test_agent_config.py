@@ -1,6 +1,9 @@
+import inspect
+
 import pytest
 
 import agent
+import tools
 from media import MockMedia
 
 
@@ -36,3 +39,10 @@ async def test_mock_publish_file_keeps_local_path(tmp_path) -> None:
     rendered.touch()
 
     assert await MockMedia().publish_file(rendered) == str(rendered)
+
+
+def test_render_progress_filler_does_not_repeat() -> None:
+    source = inspect.getsource(tools.render_all)
+
+    assert "with_filler" in source
+    assert "interval=" not in source
