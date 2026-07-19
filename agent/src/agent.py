@@ -119,8 +119,8 @@ DIRECTOR_INSTRUCTIONS = textwrap.dedent(
        call plan_shots. Walk the user through the stills.
     4. Generate. ONLY after the user approves the storyboard, call render_all.
        Never render video before the storyboard and characters are approved —
-       preview before spend. While renders run, keep the user company: narrate
-       progress naturally, like a director on set.
+       preview before spend. During rendering, do not invent or repeat progress
+       updates; the render tool and visual timeline provide status.
     5. Review and edit. When the user references a moment in time, call
        highlight with that range IMMEDIATELY, before you even reply. Then
        confirm what changes and call replace_segment. If only a line of
