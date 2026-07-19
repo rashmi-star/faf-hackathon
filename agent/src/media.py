@@ -179,6 +179,11 @@ class Media(abc.ABC):
     @abc.abstractmethod
     async def export(self, timeline_url: str, fmt: str) -> str: ...
 
+    @abc.abstractmethod
+    async def publish_file(self, path: str | Path) -> str:
+        """Publish a local render and return a browser-accessible URL."""
+        ...
+
 
 # ---------------------------------------------------------------------------
 # URL -> local path resolution (for the local ffmpeg edit engine)
@@ -319,6 +324,9 @@ class MockMedia(Media):
     async def export(self, timeline_url: str, fmt: str) -> str:
         await asyncio.sleep(0.8)
         return self._video
+
+    async def publish_file(self, path: str | Path) -> str:
+        return str(path)
 
 
 def _run_checked(command: list[str]) -> None:
@@ -531,6 +539,9 @@ class FalMedia(Media):
             },
         )
         return self._video_url(result)
+
+    async def publish_file(self, path: str | Path) -> str:
+        return await self._fal.upload_file_async(Path(path))
 
 
 # ---------------------------------------------------------------------------

@@ -401,7 +401,8 @@ async def export(ctx: RunContext, formats: list[str]) -> str:
                 aspect = "16:9"
             out = EXPORT_DIR / f"export-{fmt.replace(':', 'x')}.mp4"
             await asyncio.to_thread(render, timeline, out, aspect)
-            url = _export_url(out)
+            published = await get_media().publish_file(out)
+            url = _export_url(out) if published == str(out) else published
         else:  # no engine timeline (e.g. crash recovery): fal compose fallback
             url = await get_media().export(STATE.timeline_url, fmt)
         STATE.exports = [e for e in STATE.exports if e.format != fmt]
@@ -595,6 +596,7 @@ async def set_music(ctx: RunContext, prompt: str, gain_db: float = -8.0) -> str:
     await ctx.update("Scoring the film now.")
     duration = max(STATE.timeline.duration, LOOP_DURATION_S)
     url = await get_media().music(prompt, duration)
+    STATE.music_url = url
     src = await resolve_local(url)
     return await _apply(ctx, engine_ops.set_music, src, gain_db=gain_db)
 

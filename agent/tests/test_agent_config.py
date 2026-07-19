@@ -1,6 +1,7 @@
 import pytest
 
 import agent
+from media import MockMedia
 
 
 def test_build_llm_uses_fal(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -27,3 +28,11 @@ def test_elevenlabs_stt_uses_fast_server_vad(
 
     assert director_stt._opts.language_code == "en"
     assert director_stt._opts.server_vad["min_silence_duration_ms"] == 500
+
+
+@pytest.mark.asyncio
+async def test_mock_publish_file_keeps_local_path(tmp_path) -> None:
+    rendered = tmp_path / "export.mp4"
+    rendered.touch()
+
+    assert await MockMedia().publish_file(rendered) == str(rendered)

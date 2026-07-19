@@ -77,6 +77,8 @@ export interface ProjectState {
   transcript: TranscriptEntry[];
   /** Assembled master cut, published by the agent after render_all/replace_segment. */
   timeline_url?: string;
+  /** Public music source published by the agent for browser preview. */
+  music_url?: string;
   timeline?: {
     duration: number;
     music: { src: string; gain_db: number; duck_under_dialogue: boolean } | null;

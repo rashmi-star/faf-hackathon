@@ -68,9 +68,11 @@ export function StudioShell() {
   const shots = state.shots;
   const selectedShot: Shot | null = shots.find((s) => s.id === selectedShotId) ?? shots[0] ?? null;
   const music = state.timeline?.music;
-  const musicUrl = music?.src.includes('/agent/media-cache/')
-    ? `/api/media/${encodeURIComponent(music.src.split('/').at(-1) ?? '')}`
-    : music?.src;
+  const musicUrl =
+    state.music_url ??
+    (music?.src.includes('/agent/media-cache/')
+      ? `/api/media/${encodeURIComponent(music.src.split('/').at(-1) ?? '')}`
+      : music?.src);
 
   // Keep the playhead parked at the selected shot's start when nothing is playing yet.
   useEffect(() => {

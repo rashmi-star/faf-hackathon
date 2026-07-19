@@ -133,6 +133,7 @@ class ProjectState:
     exports: list[ExportItem] = field(default_factory=list)
     transcript: list[TranscriptEntry] = field(default_factory=list)
     timeline_url: str = ""  # assembled master video
+    music_url: str = ""  # public source for browser preview
     timeline: Timeline = field(default_factory=Timeline)  # the edit-engine session
     changelog: list[ChangelogEntry] = field(default_factory=list)
 
