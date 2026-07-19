@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Track } from 'livekit-client';
 import { motion } from 'motion/react';
 import {
@@ -47,6 +48,7 @@ export function TalkOrb() {
   const session = useSessionContext();
   const agent = useAgent();
   const micToggle = useTrackToggle({ source: Track.Source.Microphone });
+  const [micError, setMicError] = useState<string | null>(null);
 
   const agentState: AgentState = agent.state;
   const isSpeaking = agentState === 'speaking';
@@ -59,17 +61,27 @@ export function TalkOrb() {
   );
 
   const handleClick = async () => {
-    if (!session.isConnected) {
-      await session.start({
-        tracks: {
-          microphone: { enabled: true },
-          camera: { enabled: false },
-          screenShare: { enabled: false },
-        },
-      });
-      return;
+    setMicError(null);
+    try {
+      if (!session.isConnected) {
+        await session.start({
+          tracks: {
+            microphone: { enabled: true },
+            camera: { enabled: false },
+            screenShare: { enabled: false },
+          },
+        });
+        return;
+      }
+      await session.room.localParticipant.setMicrophoneEnabled(!micEnabled);
+    } catch (error) {
+      console.error('Unable to toggle microphone', error);
+      setMicError(
+        error instanceof DOMException && error.name === 'NotAllowedError'
+          ? 'Allow microphone in browser'
+          : 'Microphone connection failed'
+      );
     }
-    await micToggle.toggle();
   };
 
   return (
@@ -119,7 +131,7 @@ export function TalkOrb() {
 
       {/* state label */}
       <span className="rounded-full bg-zinc-950/80 px-2.5 py-0.5 font-mono text-[9px] font-bold tracking-widest text-zinc-300 uppercase">
-        {micEnabled ? (STATE_LABELS[agentState] ?? agentState) : 'Muted'}
+        {micError ?? (micEnabled ? (STATE_LABELS[agentState] ?? agentState) : 'Muted')}
       </span>
     </div>
   );
